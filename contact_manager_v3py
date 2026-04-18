@@ -1,0 +1,92 @@
+class ContactApp:
+    def __init__(self, root):
+        self.manager = ContactManager()
+        self.root = root
+        self.root.title("Contact Manager")
+        self.root.geometry("500x400")
+
+        # Inputs
+        tk.Label(root, text="Name").pack()
+        self.entry_name = tk.Entry(root)
+        self.entry_name.pack()
+
+        tk.Label(root, text="Phone").pack()
+        self.entry_phone = tk.Entry(root)
+        self.entry_phone.pack()
+        self.entry_phone.config(
+            validate="key",
+            validatecommand=(root.register(self.validate_phone), "%P")
+        )
+
+        tk.Label(root, text="Email").pack()
+        self.entry_email = tk.Entry(root)
+        self.entry_email.pack()
+
+        # Buttons
+        tk.Button(root, text="Add", command=self.add_contact).pack(pady=5)
+        tk.Button(root, text="Delete", command=self.delete_contact).pack(pady=5)
+
+        # Search
+        tk.Label(root, text="Search").pack()
+        self.entry_search = tk.Entry(root)
+        self.entry_search.pack()
+        tk.Button(root, text="Search", command=self.search_contact).pack(pady=5)
+
+        # Listbox
+        self.listbox = tk.Listbox(root, width=60)
+        self.listbox.pack(pady=10)
+
+        self.list_contacts()
+
+    def validate_phone(self, new_value):
+        return new_value == "" or new_value.isdigit()
+
+    def add_contact(self):
+        name = self.entry_name.get()
+        phone = self.entry_phone.get()
+        email = self.entry_email.get()
+
+        if name == "" or phone == "":
+            messagebox.showwarning("Error", "Name and Phone required!")
+            return
+
+        if not phone.isdigit():
+            messagebox.showerror("Error", "Phone number must contain digits only.")
+            return
+
+        contact = Contact(name, phone, email)
+        self.manager.add(contact)
+        self.list_contacts()
+        self.clear_fields()
+
+    def list_contacts(self):
+        self.listbox.delete(0, tk.END)
+        for i, c in enumerate(self.manager.contacts, 1):
+            self.listbox.insert(tk.END, f"{i}. {c.name} | {c.phone} | {c.email}")
+
+    def delete_contact(self):
+        try:
+            index = self.listbox.curselection()[0]
+            removed = self.manager.delete(index)
+            if removed:
+                messagebox.showinfo("Deleted", f"{removed.name} deleted")
+            self.list_contacts()
+        except IndexError:
+            messagebox.showerror("Error", "Select a contact")
+
+    def search_contact(self):
+        q = self.entry_search.get()
+        results = self.manager.search(q)
+        self.listbox.delete(0, tk.END)
+        for c in results:
+            self.listbox.insert(tk.END, f"{c.name} | {c.phone} | {c.email}")
+
+    def clear_fields(self):
+        self.entry_name.delete(0, tk.END)
+        self.entry_phone.delete(0, tk.END)
+        self.entry_email.delete(0, tk.END)
+
+# Run App
+root = tk.Tk()
+app = ContactApp(root)
+root.mainloop()
